@@ -15,7 +15,7 @@ class Blackboard:
     def setValue(self, Member, Value):
         self.con[Member] = Value
 
-    def getValue(self, Member, DefaultValue):
+    def getValue(self, Member, DefaultValue=None):
         return self.con.get(Member, DefaultValue)
 
     def setValueBath(self, Value):
@@ -45,7 +45,7 @@ class Behavior:
         pass
 
     def setServer(self,serverFunction=None):
-        if isfunction(serverFunction):
+        if isfunction(serverFunction) or type(serverFunction).__name__ == 'method':
             self.server = serverFunction
 
     def run(self):
@@ -101,7 +101,7 @@ class Trigger:
         self.rule = none
 
     def setRule(self, RuleFunction):
-        if isfunction(RuleFunction):
+        if isfunction(RuleFunction) or type(RuleFunction).__name__ == 'method':
             self.rule = RuleFunction
 
     def check(self):
