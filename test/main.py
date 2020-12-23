@@ -2,40 +2,46 @@ from selenium import webdriver
 from base.behavior_Tree import Sequence
 from base.behavior_Tree import Blackboard
 import time
-Driver = webdriver.Chrome()
+
 
 Main = Blackboard()
 Main.setValueBath({
-    '当前流程' : '登陆系统',
-    'driver' : Driver,
+    'count' : 0,
 })
-start_up = Sequence()
-start_up.setLoop(True,-1,-1,1)
-start_up_suc = Main.createScene()
-start_up_err = Main.createScene()
-start_up.addScene(start_up_err)
-start_up.addScene(start_up_suc)
-class c_start_up:
+start = Sequence()
+start.setLoop(True,-1,-1,1)
+start_err = Main.createScene()
+start_suc = Main.createScene()
+start.addScene(start_suc)
+start.addScene(start_err)
+def suc(_):
     global Main
-    url = 'https://www.jd.com/'
-    driver = Main.getValue('driver')
-    def checkURL_err(self,_):
-        if self.driver.current_url != self.url:
-            return True
-        return False
-
-    def checkURL_suc(self,_):
-        if self.driver.current_url == self.url:
-            return True
-        return False
-
-    def getURL(self,blackboard):
-        self.driver.get(self.url)
-
-    def suc(self,blackboard):
+    count = Main.getValue('count') + 1
+    print(count)
+    Main.setValue('count',count)
+    if count >=5:
         print('suc')
-start_up_rule = c_start_up()
-start_up_suc.getStartTrigger().setRule(start_up_rule.checkURL_suc)
-start_up_err.getStartTrigger().setRule(start_up_rule.checkURL_err)
-start_up_suc.getDoingBehavior().setServer(start_up_rule.suc)
-start_up_err.getDoingBehavior().setServer(start_up_rule.getURL)
+        return True
+def err(_):
+    pass
+start_suc.getStartTrigger().setRule(suc)
+start_err.getStartTrigger().setRule(err)
+
+
+
+suc_login = Sequence()
+suc_login.setLoop(True,3,-1,1)
+start_suc.addSequence(suc_login) '''向start_suc增加情景,满足star_suc后会运行suc_login里'''
+suc_login_suc = Main.createScene()
+suc_login_err = Main.createScene()
+suc_login.addScene(suc_login_suc)
+suc_login.addScene(suc_login_err)
+def suc_login(blackboard):
+    print('uc_login')
+def err_login(blackboard):
+    print('err_login')
+suc_login_suc.getStartTrigger().setRule(suc_login)
+suc_login_err.getStartTrigger().setRule(err_login)
+
+
+start.run()
