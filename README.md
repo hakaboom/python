@@ -3,7 +3,7 @@
 base.behavior_Tree ----行为树（具体例子在代码文件里）
 
 2020-12-25
-依赖：
+依赖：最后可以yongappium-doctor检查环境安装
 
     nodejs:https://nodejs.org/en/
         环境变量添加:PATH中添加安装目录
