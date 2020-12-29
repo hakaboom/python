@@ -1882,7 +1882,7 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
     """ Device object """
     @cached_property
     def system(self):
-        '''框架基本函数,所有操作系统,启动App,'''
+        '''框架基本函数,所有有关操作系统,启动App,'''
         obj = self
         class _System:
             def runApp(self,appPackage,appActivity=None):
@@ -1944,10 +1944,13 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
 
     @cached_property
     def touch(self):
-
+        '''
+            框架基点击模块,所有点击操作
+            所以点击都使用event实现
+        '''
         obj = self
+
         class _touch:
-            '''通过操作event实现点击'''
             def down(self, x, y, index=1):
                 '''
                    sendevent /dev/input/event 3 47 index  设置手指
@@ -2019,6 +2022,18 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
                 self.up(x, y, index)
 
         return _touch()
+
+    @cached_property
+    def image(self):
+        '''框架基点击函数,所有点击操作'''
+        obj = self
+        list = {
+            'path' : '/storage/emulated/0/'
+        }
+        class _image:
+            def capture(self,name='script.png'):
+                obj.shell(['screencap', list+name])
+
 
 # for compatible with old code
 Session = Device
