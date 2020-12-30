@@ -48,6 +48,8 @@ from logzero import setup_logger
 from PIL import Image
 from retry import retry
 from urllib3.util.retry import Retry
+import numpy as np
+import cv2
 
 from . import xpath
 from ._selector import Selector, UiObject
@@ -71,15 +73,17 @@ if six.PY2:
 DEBUG = False
 WAIT_FOR_DEVICE_TIMEOUT = int(os.getenv("WAIT_FOR_DEVICE_TIMEOUT", 70))
 
+
 def TOUCH_EVENT():
     list = {
-        'EVENT_ID' : 1,
-        'EVENT_PATH' : '',
-        'INDEX_LIST' : {
-            'index' : [False, False, False, False, False,False, False, False, False, False],
-            'count' : 0,
+        'EVENT_ID': 1,
+        'EVENT_PATH': '',
+        'INDEX_LIST': {
+            'index': [False, False, False, False, False, False, False, False, False, False],
+            'count': 0,
         },
     }
+
     class _Touch:
         def __getitem__(self, item):
             if item == 'index':
@@ -94,25 +98,27 @@ def TOUCH_EVENT():
         def addEventID(self):
             list['EVENT_ID'] += 1
 
-        def indexDown(self,index):
+        def indexDown(self, index):
             '''手指按下调整为True,count减1'''
             list['INDEX_LIST']['index'][index] = True
             list['INDEX_LIST']['count'] += 1
-            #self.setCount(self['count'] + 1)
+            # self.setCount(self['count'] + 1)
 
-        def indexUp(self,index):
+        def indexUp(self, index):
             '''手指按下调整为True,count减1'''
             list['INDEX_LIST']['index'][index] = False
             list['INDEX_LIST']['count'] -= 1
-            #self.setCount(self['count'] - 1)
+            # self.setCount(self['count'] - 1)
 
-        def setEventPath(self,path):
+        def setEventPath(self, path):
             list['EVENT_PATH'] = path
 
-        def setCount(self,num):
+        def setCount(self, num):
             list['INDEX_LIST']['count'] = num
 
     return _Touch()
+
+
 def SCREEN_INFO():
     '''
         orientation 1 --home键在右
@@ -123,51 +129,58 @@ def SCREEN_INFO():
         必须要传入event分辨率和当前屏幕分辨率
     '''
     list = {
-        'width' :  -1,
-        'height' : -1,
-        'orientation' : 1,
-        'eventSize' : {'width':-1,'height':-1}, #event文件中的分辨率
-        'eventScale' : {'width':-1,'height':-1}, #event文件中的分辨率和实际分辨率缩放的结果
+        'width': -1,
+        'height': -1,
+        'orientation': 1,
+        'eventSize': {'width': -1, 'height': -1},  # event文件中的分辨率
+        'eventScale': {'width': -1, 'height': -1},  # event文件中的分辨率和实际分辨率缩放的结果
     }
+
     def eventSize2WindowSize():
-        list['eventScale']['width'] = list['width']/list['eventSize']['width']
+        list['eventScale']['width'] = list['width'] / list['eventSize']['width']
         list['eventScale']['height'] = list['height'] / list['eventSize']['height']
-    def right2right(x,y):
-        return x/list['eventScale']['width'],y/list['eventScale']['height']
-    def portrait2right(x,y):
-        return (x/list['height']*list['width'])/list['eventScale']['width'],(y/list['width']*list['height'])/list['eventScale']['height']
-    def left2right(x,y):
-        return (1-x/list['height'])*list['width']/list['eventScale']['height'],(1-y/list['width'])*list['height']/list['eventScale']['height']
+
+    def right2right(x, y):
+        return x / list['eventScale']['width'], y / list['eventScale']['height']
+
+    def portrait2right(x, y):
+        return (x / list['height'] * list['width']) / list['eventScale']['width'], (
+                    y / list['width'] * list['height']) / list['eventScale']['height']
+
+    def left2right(x, y):
+        return (1 - x / list['height']) * list['width'] / list['eventScale']['height'], (1 - y / list['width']) * list[
+            'height'] / list['eventScale']['height']
 
     class _Screen:
         def __getitem__(self, item):
             return list[item]
 
-        def init(self,orientation):
+        def init(self, orientation):
             list['orientation'] = orientation
             eventSize2WindowSize()  # 设置缩放
 
-        def setScreenSize(self,width,height):
+        def setScreenSize(self, width, height):
             if width < height:
-                width,height = height, width
+                width, height = height, width
             list['width'] = width
             list['height'] = height
 
-        def setEventSize(self,width,height):
+        def setEventSize(self, width, height):
             '''长边在width,短边在height'''
-            list['eventSize']['width'] = math.ceil(width/10)
-            list['eventSize']['height'] = math.ceil(height/10)
+            list['eventSize']['width'] = math.ceil(width / 10)
+            list['eventSize']['height'] = math.ceil(height / 10)
 
-        def transform(self,x,y):
+        def transform(self, x, y):
             '''   坐标转换    '''
             if self['orientation'] == 1:
-                return right2right(x,y)
+                return right2right(x, y)
             if self['orientation'] == 2:
-                return left2right(x,y)
+                return left2right(x, y)
             if self['orientation'] == 3:
-                return portrait2right(x,y)
+                return portrait2right(x, y)
 
     return _Screen()
+
 
 TOUCH_EVENT = TOUCH_EVENT()
 SCREEN_INFO = SCREEN_INFO()
@@ -281,6 +294,7 @@ class _AgentRequestSession(TimeoutRequestsSession):
     def __init__(self, clnt: "_BaseClient"):
         super().__init__()
         self.__client = clnt
+
     def request(self, method, url, **kwargs):
         retry = kwargs.pop("retry", True)
         try:
@@ -485,7 +499,7 @@ class _BaseClient(object):
                                  stream=True)
             # return self._request("get", "/shell/stream", params={"command": cmdline}, timeout=None, stream=True) # yapf: disable
         data = dict(command=cmdline, timeout=str(timeout))
-        ret = self.http.post("/shell", data=data, timeout=timeout+10)
+        ret = self.http.post("/shell", data=data, timeout=timeout + 10)
         if ret.status_code != 200:
             raise RuntimeError(
                 "device agent responds with an error code %d" %
@@ -534,6 +548,7 @@ class _BaseClient(object):
                 params = args if args else kwargs
                 return self.server._jsonrpc_retry_call(self.method, params,
                                                        http_timeout)
+
         return JSONRpcWrapper(self)
 
     def _jsonrpc_retry_call(self, *args, **kwargs):
@@ -574,7 +589,7 @@ class _BaseClient(object):
         if res.status_code == 502:
             raise GatewayError(
                 res, "gateway error, time used %.1fs" %
-                (time.time() - request_start))
+                     (time.time() - request_start))
         if res.status_code == 410:  # http status gone: session broken
             raise SessionBrokenError("app quit or crash", res.text)
         if res.status_code != 200:
@@ -751,9 +766,9 @@ class _BaseClient(object):
     def _grant_app_permissions(self):
         logger.debug("grant permissions")
         for permission in [
-                "android.permission.SYSTEM_ALERT_WINDOW",
-                "android.permission.ACCESS_FINE_LOCATION",
-                "android.permission.READ_PHONE_STATE",
+            "android.permission.SYSTEM_ALERT_WINDOW",
+            "android.permission.ACCESS_FINE_LOCATION",
+            "android.permission.READ_PHONE_STATE",
         ]:
             self.shell(['pm', 'grant', "com.github.uiautomator", permission])
 
@@ -1408,7 +1423,8 @@ class _AppMixIn:
             time.sleep(.5)
         return False
 
-    def app_start(self, package_name: str, activity: Optional[str] = None, wait: bool = False, stop: bool = False, use_monkey: bool = False):
+    def app_start(self, package_name: str, activity: Optional[str] = None, wait: bool = False, stop: bool = False,
+                  use_monkey: bool = False):
         """ Launch application
         Args:
             package_name (str): package name
@@ -1876,19 +1892,19 @@ class _PluginMixIn:
     #             "'Session or Device' object has no attribute '%s'" % attr)
 
 
-
-
 class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMixIn):
     """ Device object """
+
     @cached_property
     def system(self):
         '''框架基本函数,所有有关操作系统,启动App,'''
         obj = self
-        class _System:
-            def runApp(self,appPackage,appActivity=None):
-                obj.app_start(appPackage,appActivity)
 
-            def isAppRunning(self,appPackage):
+        class _System:
+            def runApp(self, appPackage, appActivity=None):
+                obj.app_start(appPackage, appActivity)
+
+            def isAppRunning(self, appPackage):
                 try:
                     return obj.app_list_running().index(appPackage) != None
                 except:
@@ -1906,7 +1922,7 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
 
             def getEventSize(self):
                 devices = obj.shell('getevent -p /dev/input/event4')
-                width,height = 0,0
+                width, height = 0, 0
                 for i in devices.output.split('\n'):
                     if i.find('0035  :') > -1:
                         width = int(re.findall(r'max (.+?),', i)[0])
@@ -1914,7 +1930,7 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
                     if i.find('0036  :') > -1:
                         height = int(re.findall(r'max (.+?),', i)[0])
                         continue
-                return width,height
+                return width, height
 
             def getEventPath(self):
                 devices = obj.shell('cat /proc/bus/input/devices')
@@ -1933,7 +1949,7 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
                         if i[1]['N'] == 'Name="input"':
                             return '/dev/input/' + re.findall(r'event\d+', i[1]['H'])[0]
 
-            def init(self,index):
+            def init(self, index):
                 '''设置系统方向,会影响坐标轴的转换'''
                 TOUCH_EVENT.setEventPath(self.getEventPath())
                 SCREEN_INFO.setEventSize(*self.getEventSize())
@@ -1945,7 +1961,7 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
     @cached_property
     def touch(self):
         '''
-            框架基点击模块,所有点击操作
+            框架点击模块,所有点击操作
             所以点击都使用event实现
         '''
         obj = self
@@ -1963,11 +1979,11 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
                    SYN_MT_REPORT(2) --单独触摸数据的结尾
                    SYN_REPORT(0) --报告结束
                 '''
-                x, y = SCREEN_INFO.transform(x, y)  #先转换坐标至正确的屏幕方向和分辨率缩放
-                print(x,y)
-                eventPath = TOUCH_EVENT['EVENT_PATH']    #获取event文件地址
-                TOUCH_EVENT.addEventID() #获取ABS_MT_TRACKING_ID(57)
-                TOUCH_EVENT.indexDown(index - 1) #设置手指按下
+                x, y = SCREEN_INFO.transform(x, y)  # 先转换坐标至正确的屏幕方向和分辨率缩放
+                print(x, y)
+                eventPath = TOUCH_EVENT['EVENT_PATH']  # 获取event文件地址
+                TOUCH_EVENT.addEventID()  # 获取ABS_MT_TRACKING_ID(57)
+                TOUCH_EVENT.indexDown(index - 1)  # 设置手指按下
                 l = (
                     'sendevent {} {} {} {}'.format(eventPath, 3, 47, index - 1),
                     'sendevent {} {} {} {}'.format(eventPath, 3, 57, TOUCH_EVENT['EVENT_ID']),
@@ -1986,10 +2002,10 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
                     sendevent /dev/input/event4 1 330 0
                     sendevent /dev/input/event4 0 0 0
                 '''
-                x, y = SCREEN_INFO.transform(x, y)  #先转换坐标至正确的屏幕方向和分辨率缩放
-                eventPath = TOUCH_EVENT['EVENT_PATH']    #获取event文件地址
-                TOUCH_EVENT.indexUp(index - 1) #设置手指抬起
-                if TOUCH_EVENT['count'] > 0: #还有手指没抬起的情况
+                x, y = SCREEN_INFO.transform(x, y)  # 先转换坐标至正确的屏幕方向和分辨率缩放
+                eventPath = TOUCH_EVENT['EVENT_PATH']  # 获取event文件地址
+                TOUCH_EVENT.indexUp(index - 1)  # 设置手指抬起
+                if TOUCH_EVENT['count'] > 0:  # 还有手指没抬起的情况
                     l = (
                         'sendevent {} {} {} {}'.format(eventPath, 3, 47, index - 1),
                         'sendevent {} {} {} {}'.format(eventPath, 3, 57, -1),
@@ -2004,9 +2020,9 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
                     )
                 obj.shell('\n'.join(l))
 
-            def move(self,x ,y ,index=1):
-                x, y = SCREEN_INFO.transform(x, y)  #先转换坐标至正确的屏幕方向和分辨率缩放
-                eventPath = TOUCH_EVENT['EVENT_PATH']    #获取event文件地址
+            def move(self, x, y, index=1):
+                x, y = SCREEN_INFO.transform(x, y)  # 先转换坐标至正确的屏幕方向和分辨率缩放
+                eventPath = TOUCH_EVENT['EVENT_PATH']  # 获取event文件地址
                 l = (
                     'sendevent {} {} {} {}'.format(eventPath, 3, 47, index - 1),
                     'sendevent {} {} {} {}'.format(eventPath, 3, 53, x * 10),
@@ -2015,7 +2031,7 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
                 )
                 obj.shell('\n'.join(l))
 
-            def click(self,x,y,index=1):
+            def click(self, x, y, index=1):
                 '''仅用down up,以后打算单独写个event'''
                 self.down(x, y, index)
                 obj.sleep(0.005)
@@ -2025,14 +2041,73 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
 
     @cached_property
     def image(self):
-        '''框架基点击函数,所有点击操作'''
+        '''框架图像文件函数,所以图片操作都会基于图像格式的文件'''
         obj = self
         list = {
-            'path' : '/storage/emulated/0/'
+            'path': '/storage/emulated/0/'
         }
+
         class _image:
-            def capture(self,name='script.png'):
-                obj.shell(['screencap', list+name])
+            def capture(self, name='script.png'):
+                obj.shell(['screencap', list['path'] + name])
+
+    @cached_property
+    def screen(self):
+        '''框架屏幕图像函数,所以操作基于raw格式文件'''
+        obj = self
+        list = {
+            'phonePath': 'storage/emulated/0/',  # 图片存放到手机的地址
+            'adbPath': '',  # 图片存放到电脑的地址
+            'defName': 'script.raw',
+            'imgData': np.array([]),
+            'keep': False,
+        }
+
+        def readRaw():
+            imgData = np.fromfile(list['adbPath'] + list['defName'], dtype=np.uint8)
+            imgData = imgData[slice(12, len(imgData))]  # 截取前12为的raw图片信息,包含图片大小和通道数量
+            imgData = imgData.reshape(720, 1280, 4)
+            list['imgData'] = imgData
+
+        class _screen:
+            def getImgData(self):  # 返回list中的imgData
+                if list['keep']:  # 读取缓存的imgData
+                    if list['imgData'].size:
+                        return list['imgData']
+                    else:  # 如果imgData中没有缓存,则重新获取
+                        self.capture(list['defName'])
+                        readRaw()
+                        return list['imgData']
+                else:
+                    # keep为False,不读取imgData中已缓存的数据,重新截图,返回新的缓存
+                    self.capture(list['defName'])
+                    readRaw()
+                    return list['imgData']
+
+            def capture(self, name=list['defName']):
+                logger.info('capture screen')
+                obj.shell(['screencap', list['phonePath'] + name])
+                obj.pull(list['phonePath'] + name, list['adbPath'] + name)
+
+            def keep(self, bool=False):
+                '''
+                    False 会删除imgData中的数据
+                    True  会更新imgData中的数据
+                '''
+                if bool:
+                    list['keep'] = True
+                    self.capture(list['defName'])
+                    readRaw()
+                else:
+                    list['keep'] = False
+                    list['imgData'] = np.array([])  # 释放图片信息
+
+            def getRGB(self, x, y):
+                ''':return [R,G,B]'''
+                imgData = self.getImgData()
+                return imgData[y][x][:3]
+
+        return _screen()
 
 
 # for compatible with old code
