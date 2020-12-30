@@ -117,8 +117,6 @@ def TOUCH_EVENT():
             list['INDEX_LIST']['count'] = num
 
     return _Touch()
-
-
 def SCREEN_INFO():
     '''
         orientation 1 --home键在右
@@ -2104,8 +2102,22 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
 
             def getRGB(self, x, y):
                 ''':return [R,G,B]'''
+                return self.getImgData()[y][x][:3]
+
+            def findColor(self,rect,color,globalFuzz=100):
+                '''
+                    rect:找色范围
+                    color:[
+                        {pos = Point(x1,y1),color = color1},
+                        {pos = Point(x2,y2),color = color2, fuzz = fuzz1},
+                        {pos = Point(x3,y3),color = color3,offset = offset2
+                    ]
+                    globalFuzz:模糊度,0-100。
+                    offset:偏色 0x111111
+                :return: True,False
+                '''
                 imgData = self.getImgData()
-                return imgData[y][x][:3]
+
 
         return _screen()
 
@@ -2195,26 +2207,4 @@ def connect_usb(serial: Optional[str] = None, init: bool = False) -> Device:
 
     if not serial:
         device = adbutils.adb.device()
-        serial = device.serial
-    return Device(serial)
-
-
-def connect_wifi(addr: str) -> Device:
-    """
-    Args:
-        addr (str) uiautomator server address.
-
-    Returns:
-        Device
-
-    Raises:
-        ConnectError
-
-    Examples:
-        connect_wifi("10.0.0.1")
-    """
-    _addr = _fix_wifi_addr(addr)
-    if _addr is None:
-        raise ConnectError("addr is invalid or atx-agent is not running", addr)
-    del addr
-    return Device(_addr)
+        s
