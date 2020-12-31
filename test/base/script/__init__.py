@@ -142,3 +142,4 @@ Size.INVALID = Size(-1, -1)
 
 class Rect:
     def __init__(self,*args):
+        pass
