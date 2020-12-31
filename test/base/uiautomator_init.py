@@ -117,6 +117,8 @@ def TOUCH_EVENT():
             list['INDEX_LIST']['count'] = num
 
     return _Touch()
+
+
 def SCREEN_INFO():
     '''
         orientation 1 --home键在右
@@ -143,7 +145,7 @@ def SCREEN_INFO():
 
     def portrait2right(x, y):
         return (x / list['height'] * list['width']) / list['eventScale']['width'], (
-                    y / list['width'] * list['height']) / list['eventScale']['height']
+                y / list['width'] * list['height']) / list['eventScale']['height']
 
     def left2right(x, y):
         return (1 - x / list['height']) * list['width'] / list['eventScale']['height'], (1 - y / list['width']) * list[
@@ -2102,9 +2104,10 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
 
             def getRGB(self, x, y):
                 ''':return [R,G,B]'''
-                return self.getImgData()[y][x][:3]
+                imgData = self.getImgData()
+                return imgData[y][x][:3]
 
-            def findColor(self,rect,color,globalFuzz=100):
+            def findColor(self, rect, color, globalFuzz=100):
                 '''
                     rect:找色范围
                     color:[
@@ -2117,7 +2120,6 @@ class Device(_Device, _AppMixIn, _PluginMixIn, _InputMethodMixIn, _DeprecatedMix
                 :return: True,False
                 '''
                 imgData = self.getImgData()
-
 
         return _screen()
 
@@ -2207,4 +2209,26 @@ def connect_usb(serial: Optional[str] = None, init: bool = False) -> Device:
 
     if not serial:
         device = adbutils.adb.device()
-        s
+        serial = device.serial
+    return Device(serial)
+
+
+def connect_wifi(addr: str) -> Device:
+    """
+    Args:
+        addr (str) uiautomator server address.
+
+    Returns:
+        Device
+
+    Raises:
+        ConnectError
+
+    Examples:
+        connect_wifi("10.0.0.1")
+    """
+    _addr = _fix_wifi_addr(addr)
+    if _addr is None:
+        raise ConnectError("addr is invalid or atx-agent is not running", addr)
+    del addr
+    return Device(_addr)
