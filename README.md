@@ -1,27 +1,46 @@
-# python
 
-base.behavior_Tree ----行为树（具体例子在代码文件里）
+## **CMD**
 
-2020-12-25
-依赖：最后可以yongappium-doctor检查环境安装
+### 查询端口占用
+```PowerShell
+netstat -ano|findstr <端口号>
+```
+###终止端口
+```PowerShell
+ taskkill /pid <进程号> /F
+```
 
-    nodejs:https://nodejs.org/en/
-        环境变量添加:PATH中添加安装目录
+---------------------------------------------------------
+## **FastAPI**
+---------------------------------------------------------
+### 启动服务
+```PowerShell
+ uvicorn main：app --reload
+```
 
-    android_stuido(安装SDK):https://developer.android.google.cn/studio/
-        环境变量添加:value-ANDROID_HOME
-                        path-.\sdk
-                        PATH中添加:%ANDROID_HOME%\tools;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\build-tools\30.0.3
+ - **main**: 文件main.py
+ - **app**: main.py内的app = FastAPI()
+ - **--reload**: 更改代码后使服务器重新启动(仅用于开发)
+ 
 
-    jdk:https://www.oracle.com/java/technologies/javase-jdk15-downloads.html
-        环境变量添加:value-JAVA_HOME
-                        path-.\jave\jdk-版本
-                        PATH中添加:%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin
+---------------------------------------------------------
+## **Opencv**
+---------------------------------------------------------
+ - [ ]  源代码编译opencv-cpu
+ - [ ]  源代码编译opencv-cudn
+ - [ ]  opencv使用yolov4识别
+ - [ ]  opencv进行图像识别
 
-    Appium:http://appium.io/
-        环境变量添加:PATH中添加安装目录
-        
-    PYTHON:略
-       
-                        
-    
+---------------------------------------------------------
+###下载源代码(记得要对应版本的)
+https://github.com/opencv/opencv_contrib
+https://github.com/opencv/opencv
+
+
+ 
+---------------------------------------------------------
+## **Android**
+---------------------------------------------------------
+ - [ ]  解决截图速度
+
+### adb
