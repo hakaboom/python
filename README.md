@@ -16,8 +16,9 @@ netstat -ano|findstr <端口号>
 ---------------------------------------------------------
 ### 启动服务
 ```PowerShell
- uvicorn main：app --reload
+uvicorn main：app --reload
 ```
+ - [x]  用fastApi搭建darknet识别服务端
 
  - **main**: 文件main.py
  - **app**: main.py内的app = FastAPI()
