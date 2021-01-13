@@ -46,3 +46,5 @@ https://github.com/opencv/opencv
  - [ ]  解决截图速度
 
 ### adb
+
+ - [ ] 完成adb.py模块（2021.1.15前）
