@@ -52,4 +52,5 @@ https://github.com/opencv/opencv
 
 ### adb
 
- - [ ] 完成adb.py模块（2021.1.15前）
+ - [x] 完成adb.py模块（2021.1.15前）
+ - [ ] 解决cmd报错的处理(对于一些比如adb shell kill了不存在的端口,会弹出错误的情况)
