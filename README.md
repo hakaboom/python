@@ -53,4 +53,5 @@ https://github.com/opencv/opencv
 ### adb
 
  - [x] 完成adb.py模块（2021.1.15前）
- - [ ] 解决cmd报错的处理(对于一些比如adb shell kill了不存在的端口,会弹出错误的情况)
+ - [X] 解决cmd报错的处理
+ - [ ] 使用setevent进行点击,但是延迟大概100~150ms,效率太低,转minitouch
